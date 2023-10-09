@@ -359,7 +359,7 @@ impl State
                 // Map to zero
                 for i in 0..self.mapping.len()
                 {
-                    let sta = self.mapping[i].0.clone();
+                    let sta = self.mapping[i].0;
                     let amp = self.mapping[i].1.clone();
                     
                     if (sta & (1 << qubit)) == 0
@@ -379,10 +379,10 @@ impl State
                 // Map to one
                 for i in 0..self.mapping.len()
                 {
-                    let sta = self.mapping[i].0.clone();
+                    let sta = self.mapping[i].0;
                     let amp = self.mapping[i].1.clone();
                     
-                    if (sta & (1 << qubit)) == 1
+                    if (sta & (1 << qubit)) > 0
                     {
                         self.mapping[i] = (sta, amp.scalar(1.0 / prob_one.sqrt()));
                     }
