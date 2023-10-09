@@ -36,6 +36,11 @@ impl Complex
         return Complex{real: self.real, imag: -self.imag};
     }
 
+    pub fn scalar(&self, s: f64) -> Complex
+    {
+        return Complex{real: self.real * s, imag: self.imag * s};
+    }
+
     pub fn exp(&self) -> Complex
     {
         let f = self.real.exp();
