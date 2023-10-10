@@ -10,6 +10,10 @@ fn mask(l: u64) -> u64
 
 pub fn shor(n: u64) -> u64
 {
+    if n < 15 {
+        panic!("[!] Number is too small!");
+    }
+
     println!("[*] Checking if n is even...");
     if n % 2 == 0 {
         return 2;
@@ -18,7 +22,7 @@ pub fn shor(n: u64) -> u64
     println!("[*] Try to guess factor...");
 
     let mut rng = rand::thread_rng();
-    let x = rng.gen_range(1..n);
+    let x = rng.gen_range(2..n);
     println!("[*] Generate random... {}", x);
 
     let d = gcd(x, n);
@@ -61,10 +65,13 @@ pub fn shor(n: u64) -> u64
     let repr = continued_fraction_representation(measurement, 1 << m);
     let conv = continued_fraction_convergents(repr.clone());
 
+    println!("[*] Compute continued fraction representation... {:?}", repr.clone());
+    println!("[*] Compute continued fraction convergents... {:?}", conv.clone());
+
     // check periods
     let mut period: Option<u64> = None;
     for i in (0..conv.len()).rev() {
-        if modexp(x, conv[i].1, n) == 1 && conv[i].1 != 0 {
+        if modexp(x, conv[i].1, n) == 1 && conv[i].1 > 1 {
             period = Some(conv[i].1);
         }
     }
@@ -83,11 +90,12 @@ pub fn shor(n: u64) -> u64
     println!("[*] Compute factor...");
     // Compute factor
     let factor = gcd(n, x.pow((period.unwrap() / 2) as u32) - 1);
-    println!("[*] Factor: {}", factor);
 
     if factor > 1 && factor < n {
+        println!("[*] Factor: {}", factor);
         return factor;
     }
 
+    println!("[-] Computing the factor failed, try again!");
     return 1;
 }
