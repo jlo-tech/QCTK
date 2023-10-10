@@ -31,7 +31,7 @@ impl State
         for i in 0..self.mapping.len()
         {
             let tup = &self.mapping[i];
-            println!("|{}> {:?}", tup.0, tup.1);
+            println!("|{:0>6}> {:?}", tup.0, tup.1);
         }
     }
 
@@ -40,7 +40,7 @@ impl State
         for i in 0..self.mapping.len()
         {
             let tup = self.mapping[i].clone();
-            println!("|{}> {:?}", tup.0, tup.1.abs_squared());
+            println!("|{:0>6}> {:?}", tup.0, tup.1.abs_squared());
         }
     }
 
@@ -266,8 +266,8 @@ impl State
         let mut j = span - 1;
         loop
         {
-            if (j - i) >= 1 {
-                self.swap(offset + i, offset + span - 1 - i);
+            if j > i {
+                self.swap(offset + i, offset + j);
             } else {
                 break;
             }
@@ -294,8 +294,8 @@ impl State
         let mut j = span - 1;
         loop
         {
-            if (j - i) >= 1 {
-                self.swap(offset + i, offset + span - 1 - i);
+            if j > i {
+                self.swap(offset + i, offset + j);
             } else {
                 break;
             }
@@ -349,6 +349,9 @@ impl State
             }
         }
 
+        // Calc probability factors
+        let prob_zero_inverse = Complex::new(1.0 / prob_zero.sqrt(), 0.0);
+        let prob_one_inverse = Complex::new(1.0 / prob_one.sqrt(), 0.0);
         // Determine if bit is zero or one
         loop 
         {
@@ -364,7 +367,7 @@ impl State
                     
                     if (sta & (1 << qubit)) == 0
                     {
-                        self.mapping[i] = (sta, amp.scalar(1.0 / prob_zero.sqrt()));
+                        self.mapping[i] = (sta, amp.mul(prob_zero_inverse.clone()));
                     }
                     else
                     {
@@ -384,7 +387,7 @@ impl State
                     
                     if (sta & (1 << qubit)) > 0
                     {
-                        self.mapping[i] = (sta, amp.scalar(1.0 / prob_one.sqrt()));
+                        self.mapping[i] = (sta, amp.mul(prob_one_inverse.clone()));
                     }
                     else
                     {
