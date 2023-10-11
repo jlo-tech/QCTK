@@ -5,7 +5,7 @@ use crate::quantum::*;
 
 fn mask(l: u64) -> u64
 {
-    return ((1 << l) - 1);
+    return (1 << l) - 1;
 }
 
 pub fn shor(n: u64) -> u64
