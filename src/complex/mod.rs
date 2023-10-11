@@ -1,10 +1,8 @@
-pub mod test;
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Complex
 {
-    real: f64,
-    imag: f64,
+    pub real: f64,
+    pub imag: f64,
 }
 
 impl Complex
@@ -27,13 +25,18 @@ impl Complex
     pub fn mul(&self, c: Complex) -> Complex
     {
         let x = (self.real * c.real) - (self.imag * c.imag);
-        let y = (self.real * c.imag) - (self.imag * c.real);
+        let y = (self.real * c.imag) + (self.imag * c.real);
         return Complex{real: x, imag: y};
     }
 
     pub fn conj(&self) -> Complex
     {
         return Complex{real: self.real, imag: -self.imag};
+    }
+
+    pub fn scalar(&self, s: f64) -> Complex
+    {
+        return Complex{real: self.real * s, imag: self.imag * s};
     }
 
     pub fn exp(&self) -> Complex

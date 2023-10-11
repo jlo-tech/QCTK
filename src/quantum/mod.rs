@@ -1,4 +1,8 @@
+pub mod shor;
+pub mod utils;
+
 use std::vec::Vec;
+use rand::prelude::*;
 use std::collections::HashSet;
 
 use crate::Complex;
@@ -27,7 +31,7 @@ impl State
         for i in 0..self.mapping.len()
         {
             let tup = &self.mapping[i];
-            println!("|{}> {:?}", tup.0, tup.1);
+            println!("|{:0>6}> {:?}", tup.0, tup.1);
         }
     }
 
@@ -36,7 +40,7 @@ impl State
         for i in 0..self.mapping.len()
         {
             let tup = self.mapping[i].clone();
-            println!("|{}> {:?}", tup.0, tup.1.abs_squared());
+            println!("|{:0>6}> {:?}", tup.0, tup.1.abs_squared());
         }
     }
 
@@ -262,8 +266,8 @@ impl State
         let mut j = span - 1;
         loop
         {
-            if (j - i) >= 1 {
-                self.swap(offset + i, offset + span - 1 - i);
+            if j > i {
+                self.swap(offset + i, offset + j);
             } else {
                 break;
             }
@@ -290,8 +294,8 @@ impl State
         let mut j = span - 1;
         loop
         {
-            if (j - i) >= 1 {
-                self.swap(offset + i, offset + span - 1 - i);
+            if j > i {
+                self.swap(offset + i, offset + j);
             } else {
                 break;
             }
@@ -301,15 +305,117 @@ impl State
         }
     }
 
-    pub fn pow_x_mod_n(&mut self, x: u64, n: u64)
+    pub fn pow_x_mod_n(&mut self, span: u64, x: u64, n: u64)
     {
+        let bit_size = 64 - (n.leading_zeros() as u64);
+        if self.qubits < (span + bit_size)
+        {
+            panic!("Wrong number of qubits!");
+        }
+
+        // Reset state vector
+        self.mapping.clear();
+
+        // Mark states
+        let f = 1.0 / ((1 << span) as f64).sqrt();
+        let factor = Complex::new(f, 0.0);
+
+        for i in 0..(1 << span)
+        {
+            let new_state = (i << bit_size) | utils::modexp(x, i, n);
+            let new_index = self.state_index(new_state);
+
+            self.mapping[new_index] = (new_state, factor.clone());
+        }
     }
 
-    pub fn measure(&self)
+    pub fn measure_and_project(&mut self, qubit: u64) -> u64
     {
+        let mut prob_zero = 0.0;
+        let mut prob_one  = 0.0;
+
+        for i in 0..self.mapping.len()
+        {
+            let state = self.mapping[i].0;
+            let amplitude = self.mapping[i].1.clone();
+
+            if (state & (1 << qubit)) == 0
+            {
+                prob_zero += amplitude.abs_squared();
+            }
+            else
+            {
+                prob_one += amplitude.abs_squared();
+            }
+        }
+
+        // Calc probability factors
+        let prob_zero_inverse = Complex::new(1.0 / prob_zero.sqrt(), 0.0);
+        let prob_one_inverse = Complex::new(1.0 / prob_one.sqrt(), 0.0);
+        // Determine if bit is zero or one
+        loop 
+        {
+            let mut rval: f64;
+            
+            rval = random::<f64>();
+            if rval < prob_zero {
+                // Map to zero
+                for i in 0..self.mapping.len()
+                {
+                    let sta = self.mapping[i].0;
+                    let amp = self.mapping[i].1.clone();
+                    
+                    if (sta & (1 << qubit)) == 0
+                    {
+                        self.mapping[i] = (sta, amp.mul(prob_zero_inverse.clone()));
+                    }
+                    else
+                    {
+                        self.mapping[i] = (sta, Complex::zero());
+                    }
+                }
+                return 0;
+            }
+
+            rval = random::<f64>();
+            if rval < prob_one {
+                // Map to one
+                for i in 0..self.mapping.len()
+                {
+                    let sta = self.mapping[i].0;
+                    let amp = self.mapping[i].1.clone();
+                    
+                    if (sta & (1 << qubit)) > 0
+                    {
+                        self.mapping[i] = (sta, amp.mul(prob_one_inverse.clone()));
+                    }
+                    else
+                    {
+                        self.mapping[i] = (sta, Complex::zero());
+                    }
+                }
+                return 1;
+            }
+        }
     }
 
-    pub fn measure_and_project(&mut self, qubit: u64)
+    pub fn measure(&self) -> u64
     {
+        // use rejection sampling to measure value
+        let l = self.mapping.len();
+        let mut i = 0;
+        loop
+        {
+            let rval: f64 = random::<f64>();
+            let state: u64 = self.mapping[i % l].0;
+            let prob: f64 = self.mapping[i % l].1.clone().abs_squared();
+            // check prob
+            if rval < prob
+            {
+                return state % (l as u64);
+            }
+            // inc counter
+            i += 1;
+        }
     }
 }
