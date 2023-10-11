@@ -1,6 +1,6 @@
-# Quantum
+# QCTK
 
-A small quantum computing simulator written in Rust. It runs Shor's algorithm on small numbers.
+A small quantum computing toolkit/simulator written in Rust. It runs Shor's algorithm on small numbers.
 
 ## References
 
